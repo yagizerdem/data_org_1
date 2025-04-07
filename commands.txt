@@ -1,0 +1,32 @@
+-- compile --
+gcc program.c -o program $(xml2-config --cflags --libs) -ljson-c -> compile 
+
+-- run program --
+
+1. convert to binary 
+    ./program <csv file name> <binary file> 1 -seperator <1|2|3>
+    
+    ./program smartlogs.csv logdata.dat 1 -seperator 1
+    ./program smartlogs.csv logdata.dat 1 -seperator 2
+    ./program smartlogs.csv logdata.dat 1 -seperator 3 
+
+2. convert to binary 
+    ./program <output file name> <binary file> 2
+
+    ./program out.xml logdata.dat 2
+
+2. validate xml with xsd
+    ./program <xml file name> <xsd file name> 3
+
+    ./program out.xml validation.xsd 3
+
+
+
+
+-- happy path 
+    - use csv with ,
+
+    run : 
+        ./program smartlogs.csv logdata.dat 1 -seperator 1
+        ./program out.xml logdata.dat 2
+        ./program out.xml validation.xsd 3

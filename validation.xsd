@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="smartlogs">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="entry" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="device">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="device_id" type="xs:string"/>
+                    <xs:element name="location" type="xs:string"/>
+                    <xs:element name="firmware_ver" type="xs:string"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="metrics">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="temperature" type="xs:decimal"/>
+                    <xs:element name="humidity" type="xs:integer"/>
+                    <xs:element name="battery" type="xs:integer"/>
+                  </xs:sequence>
+                  <xs:attribute name="status" type="xs:string" use="required"/>
+                  <xs:attribute name="alert_level" type="xs:string" use="required"/>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="timestamp" type="xs:string"/>
+
+              <xs:element name="event_code">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="littleEndian" type="xs:string" use="required"/>
+                      <xs:attribute name="bigEndian" type="xs:string" use="required"/>
+                      <xs:attribute name="decimal" type="xs:decimal" use="required"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+
+            </xs:sequence>
+
+            <xs:attribute name="id" type="xs:integer" use="required"/>
+
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
