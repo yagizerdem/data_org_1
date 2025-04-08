@@ -134,7 +134,7 @@ void toBinary(FILE *fp){
             
             home_device = (record*) realloc(home_device, (counter) * sizeof(record)); //reallocate in every loop
             memset(&home_device[counter-1], 0, sizeof(record));
-            char *device_id = strtok(csvRow, ",");
+            char *device_id = strtok(csvRow, seperator);
             if (device_id != NULL) {
                 strcpy(home_device[counter-1].device_id, device_id);
             }
@@ -142,7 +142,7 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].device_id, "N/A");
             }
 
-            char *timestamp = strtok(NULL, ",");
+            char *timestamp = strtok(NULL, seperator);
             if (timestamp != NULL) {
                 strcpy(home_device[counter-1].timestamp, timestamp);
             }
@@ -150,20 +150,20 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].timestamp, "N/A");
             }
 
-            char *temperature = strtok(NULL, ",");
+            char *temperature = strtok(NULL, seperator);
             if (temperature != NULL) {
                 home_device[counter-1].temperature = atof(temperature);
             }
 
 
 
-            char *humidity = strtok(NULL, ",");
+            char *humidity = strtok(NULL, seperator);
             if (humidity != NULL) {
                 home_device[counter-1].humidity = (uint8_t)atoi(humidity); 
             }
 
 
-            char *status = strtok(NULL, ",");
+            char *status = strtok(NULL, seperator);
             if (status != NULL) {
                 strcpy(home_device[counter-1].status, status);
             }
@@ -171,7 +171,7 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].status, "N/A");
             }
 
-            char *location = strtok(NULL, ",");
+            char *location = strtok(NULL, seperator);
             if (location != NULL) {
                 strcpy(home_device[counter-1].location, location);
             }
@@ -179,7 +179,7 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].location, "N/A");
             }
 
-            char *alert_level = strtok(NULL, ",");
+            char *alert_level = strtok(NULL, seperator);
             if (alert_level != NULL) {
                 strcpy(home_device[counter-1].alert_level, alert_level);
             }
@@ -187,12 +187,12 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].alert_level, "N/A");
             }
 
-            char *battery = strtok(NULL, ",");
+            char *battery = strtok(NULL, seperator);
             if (battery != NULL) {
                 home_device[counter-1].battery = (uint8_t)atoi(battery);
             }
 
-            char *firmware_ver = strtok(NULL, ",");
+            char *firmware_ver = strtok(NULL, seperator);
             if (firmware_ver != NULL) {
                 strcpy(home_device[counter-1].firmware_ver, firmware_ver);
             }
@@ -200,7 +200,7 @@ void toBinary(FILE *fp){
                 strcpy(home_device[counter-1].firmware_ver, "N/A");
             }
 
-            char *event_code = strtok(NULL, ",");
+            char *event_code = strtok(NULL, seperator);
             if (event_code != NULL) {
                 home_device[counter-1].event_code = (uint8_t)atoi(event_code);  
             }
@@ -237,14 +237,21 @@ void BintoXML(){
 
     record* home_device = NULL;
     int counter = 0; 
-    while (!feof(fp)) { 
-      home_device = (record * ) realloc(home_device, (counter + 1) * sizeof(record)); 
-      size_t items_read = fread( & home_device[counter], sizeof(record), 1, fp); 
-      if (items_read != 1) {
-        // fread failed, maybe because of EOF or error
-        break;
-    }
-      counter++;
+    while (1) { 
+        home_device = (record *) realloc(home_device, (counter + 1) * sizeof(record));
+        if (home_device == NULL) {
+            perror("Memory allocation failed");
+            fclose(fp);
+            return;
+        }
+    
+        size_t items_read = fread(&home_device[counter], sizeof(record), 1, fp);
+        if (items_read != 1) {
+            // Either EOF or error
+            break;
+        }
+    
+        counter++;
     }
 
     qsort(home_device, counter, sizeof(struct record), compare_by);
@@ -255,7 +262,7 @@ void BintoXML(){
     root_node = xmlNewNode(NULL, BAD_CAST "smartlogs");
     xmlDocSetRootElement(doc, root_node);
 
-    for(int i = 0; i < counter -1 ; i++){
+    for(int i = 0; i < counter  ; i++){
         xmlNodePtr entryNode = xmlNewChild(root_node, NULL, BAD_CAST "entry",BAD_CAST "");
         char id[10];
         snprintf(id, sizeof(id), "%d", i + 1);
@@ -439,12 +446,43 @@ int compare_by(const void *a, const void *b) {
     return -1 * is_bigger;
 }
 
+
+void print_instructions() {
+    printf("\n-- compile --\n");
+    printf("gcc program.c -o program $(xml2-config --cflags --libs) -ljson-c\n");
+
+    printf("\n-- run program --\n");
+
+    printf("\n1. convert to binary\n");
+    printf("    ./program <csv file name> <binary file> 1 -seperator <1|2|3>\n");
+    printf("    ./program smartlogs.csv logdata.dat 1 -seperator 1\n");
+    printf("    ./program smartlogs.csv logdata.dat 1 -seperator 2\n");
+    printf("    ./program smartlogs.csv logdata.dat 1 -seperator 3\n");
+
+    printf("\n2. convert to xml\n");
+    printf("    ./program <output file name> <binary file> 2\n");
+    printf("    ./program out.xml logdata.dat 2\n");
+
+    printf("\n3. validate xml with xsd\n");
+    printf("    ./program <xml file name> <xsd file name> 3\n");
+    printf("    ./program out.xml validation.xsd 3\n");
+
+    printf("\n-- happy path --\n");
+    printf("    - use csv with ','\n\n");
+
+    printf("    run :\n");
+    printf("        ./program smartlogs.csv logdata.dat 1 -seperator 1\n");
+    printf("        ./program out.xml logdata.dat 2\n");
+    printf("        ./program out.xml validation.xsd 3\n\n");
+}
+
+
 int main(int argc, char *argv[]) {
     
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0) {
             printf("Help:\n");
-            printf("use command.txt file to run tool \n");
+            print_instructions();
             return 0; 
         }
     }
